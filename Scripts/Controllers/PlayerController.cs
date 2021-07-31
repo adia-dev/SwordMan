@@ -1,4 +1,5 @@
 using SwordMan.Behaviors;
+using SwordMan.Managers;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,38 +12,31 @@ namespace SwordMan.Controllers
     {
 
         [SerializeField] Transform _inputSpace = null;
-        [SerializeField] GameObject _thirdPersonCamera = null;
+        [SerializeField] Cinemachine.CinemachineInputProvider _inputProvider = null;
+        [SerializeField] Cinemachine.CinemachineFreeLook _thirdPersonCamera = null;
+        [SerializeField] Cinemachine.CinemachineImpulseSource _cinemachineImpulseSource = null;
         [SerializeField] Transform _leftFoot = null, _rightFoot = null;
-        [SerializeField] Transform _target;
         [SerializeField] Transform _cameraAimPoint = null;
+        [SerializeField] GameObject _targetLockedVolume = null;
 
-        [SerializeField] bool _hideCursor = true;
-        [SerializeField] bool _showDebug = false;
+        [SerializeField] float _slowMoMultiplier = 0.25f;
+
         [SerializeField] Cinemachine.CinemachineTargetGroup _targetGroup = null;
 
 
         #region private variables
-        bool _isRunning = false;
-        bool _lockMovement = false;
-        bool _targetLocked = false;
-        bool _isMovingLeft = false;
+
         float _lastLookDirection = 0f;
-        Vector2 _movementInput;
         #endregion
 
         #region instances
         AnimatorController _animatorController;
         MovementBehavior _movementBehavior;
+        FightingBehavior _fightingBehavior;
         #endregion
 
         #region public properties
 
-        public Vector2 MovementInput => _movementInput;
-        public bool MovementLocked => _lockMovement;
-        public bool TargetLocked => _targetLocked;
-        public bool IsMovingLeft => _isMovingLeft;
-        public bool IsRunning => _isRunning;
-        public Transform Target => _target;
         public Transform InputSpace => _inputSpace;
 
         #endregion
@@ -51,130 +45,110 @@ namespace SwordMan.Controllers
         {
             _animatorController = GetComponent<AnimatorController>();
             _movementBehavior = GetComponent<MovementBehavior>();
+            _fightingBehavior = GetComponent<FightingBehavior>();
 
-            if (_hideCursor)
+
+            if (InputManager.Instance.HideCursor)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
+
         }
 
         void Update()
         {
-            if (_lockMovement) return;
+            if (InputManager.Instance.MovementLocked) return;
 
-            if (_movementInput.magnitude == 0f)
-                _isRunning = false;
+            Time.timeScale = 1f;
 
-            HandleInputs();
+            if (InputManager.Instance.MovementInput.magnitude == 0f)
+                InputManager.Instance.IsRunning = false;
+            else
+                InputManager.Instance.MovementInput = Vector2.ClampMagnitude(InputManager.Instance.MovementInput, 1f);
+
+
+            if (InputManager.Instance.TargetLocked)
+            {
+                UpdateLockState();
+            }
+            else
+            {
+                ClearLockState();
+            }
+
             UpdateAnimator();
 
         }
 
 
-        void HandleInputs()
+        void ClearLockState()
         {
-            _movementInput = Vector2.ClampMagnitude(_movementInput, 1f);
+            _targetLockedVolume.SetActive(false);
+            _thirdPersonCamera.gameObject.SetActive(true);
+            _thirdPersonCamera.m_BindingMode = Cinemachine.CinemachineTransposer.BindingMode.SimpleFollowWithWorldUp;
 
-            if (_targetLocked && _target != null)
+            if (_inputProvider != null)
+                _inputProvider.enabled = true;
+
+            _movementBehavior.Move();
+        }
+
+        void UpdateLockState()
+        {
+            if (_fightingBehavior.CurrentTarget != null)
             {
 
-                _thirdPersonCamera?.SetActive(false);
-                _targetGroup.RemoveMember(null);
-                _targetGroup.RemoveMember(_cameraAimPoint);
 
-                if (_movementInput.magnitude == 0f)
-                    _isMovingLeft = _lastLookDirection < 0f;
+
+                if (InputManager.Instance.MovementInput.magnitude == 0f)
+                    InputManager.Instance.IsMovingLeft = _lastLookDirection < 0f;
                 else
-                    _lastLookDirection = _movementInput.x;
+                    _lastLookDirection = InputManager.Instance.MovementInput.x;
+
+                Time.timeScale = _slowMoMultiplier;
+
+                _targetLockedVolume.SetActive(true);
+
+                if (_inputProvider != null)
+                    _inputProvider.enabled = false;
+
+                _thirdPersonCamera.gameObject.SetActive(false);
+                _thirdPersonCamera.m_BindingMode = Cinemachine.CinemachineTransposer.BindingMode.LockToTarget;
 
 
-
-                if (_targetGroup.FindMember(_target) < 0)
-                    _targetGroup.AddMember(_target, 1f, 0f);
+                if (_targetGroup.FindMember(_fightingBehavior.CurrentTarget.transform) < 0)
+                    _targetGroup.AddMember(_fightingBehavior.CurrentTarget.transform, 1f, 0f);
 
                 if (_targetGroup.FindMember(_cameraAimPoint) < 0)
-                    _targetGroup.AddMember(_cameraAimPoint, 10f, 1f);
+                    _targetGroup.AddMember(_cameraAimPoint, 1f, 1f);
 
-                _movementBehavior.MoveAround(_target);
-
+                _movementBehavior.MoveAround(_fightingBehavior.CurrentTarget.transform);
             }
             else
             {
-                _thirdPersonCamera?.SetActive(true);
-                _movementBehavior.Move();
+                InputManager.Instance.TargetLocked = false;
             }
-
         }
-
 
         void UpdateAnimator()
         {
-            _animatorController.Animator.SetFloat(_animatorController.InputMagAnimParam, _movementInput.magnitude);
-            _animatorController.Animator.SetFloat(_animatorController.InputXAnimParam, _movementInput.x);
-            _animatorController.Animator.SetFloat(_animatorController.InputYAnimParam, _movementInput.y);
+            _animatorController.Animator.SetFloat(_animatorController.InputMagAnimParam, InputManager.Instance.MovementInput.magnitude);
+            _animatorController.Animator.SetFloat(_animatorController.InputXAnimParam, InputManager.Instance.MovementInput.x);
+            _animatorController.Animator.SetFloat(_animatorController.InputYAnimParam, InputManager.Instance.MovementInput.y);
 
-            _animatorController.Animator.SetFloat(_animatorController.HorizontalAnimParam, _movementInput.x * (_isRunning ? 2f : 1f));
-            _animatorController.Animator.SetFloat(_animatorController.VerticalAnimParam, _movementInput.y * (_isRunning ? 2f : 1f));
+            _animatorController.Animator.SetFloat(_animatorController.HorizontalAnimParam, InputManager.Instance.MovementInput.x * (InputManager.Instance.IsRunning ? 2f : 1f));
+            _animatorController.Animator.SetFloat(_animatorController.VerticalAnimParam, InputManager.Instance.MovementInput.y * (InputManager.Instance.IsRunning ? 2f : 1f));
 
-            _animatorController.Animator.SetBool(_animatorController.TargetLockedAnimParam, _targetLocked);
-            _animatorController.Animator.SetBool(_animatorController.IsMovingLeftAnimParam, _isMovingLeft);
-
+            _animatorController.Animator.SetBool(_animatorController.TargetLockedAnimParam, InputManager.Instance.TargetLocked);
+            _animatorController.Animator.SetBool(_animatorController.IsMovingLeftAnimParam, InputManager.Instance.IsMovingLeft);
         }
-
-        void OnDrawGizmos()
-        {
-            if (!_showDebug || _leftFoot == null || _rightFoot == null) return;
-
-
-            Gizmos.DrawLine(_leftFoot.position, _rightFoot.position);
-
-        }
-
-
-
-        #region InputAction Events
-
-        public void OnMove(InputAction.CallbackContext ctx)
-        {
-            _movementInput = ctx.ReadValue<Vector2>();
-        }
-
-        public void OnRun(InputAction.CallbackContext ctx)
-        {
-            _isRunning = !_isRunning;
-        }
-        public void OnJump(InputAction.CallbackContext ctx)
-        {
-            if (ctx.started)
-                _animatorController.Animator.SetTrigger(_animatorController.JumpAnimParam);
-        }
-
-        public void OnDodge(InputAction.CallbackContext ctx)
-        {
-            if (ctx.started)
-                _animatorController.Animator.SetTrigger(_animatorController.DodgeAnimParam);
-        }
-
-        public void OnLockTarget(InputAction.CallbackContext ctx)
-        {
-            if (ctx.started && _target != null)
-                _targetLocked = !_targetLocked;
-        }
-
-        public void OnShowDebug(InputAction.CallbackContext ctx)
-        {
-            if (ctx.started)
-                _showDebug = !_showDebug;
-        }
-
-        #endregion
 
         #region CustomEvents / Public Methods
 
         public void StopRun()
         {
-            _isRunning = false;
+            InputManager.Instance.IsRunning = false;
         }
 
         public void EnableRootMotion()
@@ -190,15 +164,15 @@ namespace SwordMan.Controllers
 
         public void LockMovement()
         {
-            _lockMovement = true;
-            _movementInput = Vector3.zero;
+            InputManager.Instance.MovementLocked = true;
+            InputManager.Instance.MovementInput = Vector3.zero;
             //Erase velocity in the future
         }
 
 
         public void UnlockMovement()
         {
-            _lockMovement = false;
+            InputManager.Instance.MovementLocked = false;
             Debug.Log("Unlock");
         }
     }

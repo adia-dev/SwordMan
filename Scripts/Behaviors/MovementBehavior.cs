@@ -1,4 +1,5 @@
 using SwordMan.Controllers;
+using SwordMan.Managers;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -47,9 +48,9 @@ namespace SwordMan.Behaviors
 
         public void Move()
         {
-            if (_playerController.MovementInput.magnitude >= 0.2f)
+            if (InputManager.Instance.MovementInput.magnitude >= 0.2f)
             {
-                float targetAngle = Mathf.Atan2(_playerController.MovementInput.x, _playerController.MovementInput.y) * Mathf.Rad2Deg;
+                float targetAngle = Mathf.Atan2(InputManager.Instance.MovementInput.x, InputManager.Instance.MovementInput.y) * Mathf.Rad2Deg;
                 if (_playerController.InputSpace != null)
                     targetAngle += _playerController.InputSpace.eulerAngles.y;
 
@@ -58,7 +59,7 @@ namespace SwordMan.Behaviors
             }
 
 
-            float targetSpeed = (_playerController.IsRunning ? _runSpeed : _walkSpeed) * _playerController.MovementInput.magnitude;
+            float targetSpeed = (InputManager.Instance.IsRunning ? _runSpeed : _walkSpeed) * InputManager.Instance.MovementInput.magnitude;
 
             _currentSpeed = Mathf.SmoothDamp(_currentSpeed, targetSpeed, ref _speedSmoothVelocity, _speedSmoothTime);
 
@@ -88,15 +89,13 @@ namespace SwordMan.Behaviors
             forward.y = 0f;
             forward.Normalize();
 
-            float targetSpeed = (_playerController.IsRunning ? _runSpeed : _walkSpeed) * _playerController.MovementInput.magnitude;
+            float targetSpeed = (InputManager.Instance.IsRunning ? _runSpeed : _walkSpeed) * InputManager.Instance.MovementInput.magnitude;
 
             _currentSpeed = Mathf.SmoothDamp(_currentSpeed, targetSpeed, ref _speedSmoothVelocity, _speedSmoothTime);
 
 
-            Vector3 velocity = (forward * _playerController.MovementInput.y + right * _playerController.MovementInput.x) * _currentSpeed + Vector3.up * _velocityY;
-
-            Debug.Log(velocity);
-
+            _velocityY += Physics.gravity.y * _gravityMultiplier * Time.deltaTime;
+            Vector3 velocity = (forward * InputManager.Instance.MovementInput.y + right * InputManager.Instance.MovementInput.x) * _currentSpeed + Vector3.up * _velocityY;
 
             _characterController.Move(velocity * Time.deltaTime);
 
