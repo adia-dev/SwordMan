@@ -94,9 +94,25 @@
                     "interactions": ""
                 },
                 {
+                    "name": "Special 1",
+                    "type": "Button",
+                    "id": "5c40266e-da33-45c5-b7fa-e656630ee033",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
                     "name": "Attack 2",
                     "type": "Button",
                     "id": "997c0676-d12c-41d5-9604-e1de03571bd7",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Special 2",
+                    "type": "Button",
+                    "id": "ee8acfdd-a0f1-4484-9ada-3ab7112c07fe",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
@@ -309,6 +325,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "Attack 2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7cd2e92a-4ff0-4817-a3fb-6c379f68bde4",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Special 1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3ae8c971-4215-4fe7-bcb2-98689011830e",
+                    "path": "<Gamepad>/leftTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Special 2",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

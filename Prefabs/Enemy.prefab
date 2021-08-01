@@ -322,7 +322,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0.41, y: 0.03}
+  m_SizeDelta: {x: 0.95, y: 0.03}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &955954818
 CanvasRenderer:
@@ -2220,7 +2220,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: d9c9d1a5ca167bd45a65be8bba37017c, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
@@ -2242,15 +2242,17 @@ MonoBehaviour:
   _middle: {fileID: 0}
   _bottom: {fileID: 0}
   _canvas: {fileID: 1234220988}
+  _healthBar: {fileID: 955954817}
+  _energyBar: {fileID: 734787972}
+  MaxHealth: 1500
+  CurrentHealth: 0
   _currentTarget: {fileID: 0}
   _detectionRadius: 3
   _targetMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  _detectionColor: {r: 1, g: 0, b: 0, a: 1}
-  _targetsInRange: []
-  _targetsInRangeDot: []
-  _targetsInRangeCross: []
+  _cinemachineImpulseSource: {fileID: 0}
+  _weaponCollider: {fileID: 0}
   _nameText: {fileID: 367249287}
 --- !u!195 &7357558000109613854
 NavMeshAgent:
@@ -2282,7 +2284,7 @@ CapsuleCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6479401626695579273}
   m_Material: {fileID: 0}
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_Enabled: 1
   m_Radius: 0.3
   m_Height: 2

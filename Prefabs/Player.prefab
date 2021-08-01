@@ -437,6 +437,38 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 997c0676-d12c-41d5-9604-e1de03571bd7
     m_ActionName: InGame/Attack 2[/XInputControllerWindows/buttonNorth]
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: SwordMan.Managers.InputManager, Assembly-CSharp
+        m_MethodName: OnSpecial1
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 5c40266e-da33-45c5-b7fa-e656630ee033
+    m_ActionName: InGame/Special 1[/XInputControllerWindows/rightTrigger]
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: SwordMan.Managers.InputManager, Assembly-CSharp
+        m_MethodName: OnSpecial2
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: ee8acfdd-a0f1-4484-9ada-3ab7112c07fe
+    m_ActionName: InGame/Special 2[/XInputControllerWindows/leftTrigger]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: InGame
@@ -457,9 +489,6 @@ MonoBehaviour:
   _inputSpace: {fileID: 0}
   _inputProvider: {fileID: 0}
   _thirdPersonCamera: {fileID: 0}
-  _cinemachineImpulseSource: {fileID: 0}
-  _leftFoot: {fileID: 6723658199128760397}
-  _rightFoot: {fileID: 3222918195460982347}
   _cameraAimPoint: {fileID: 343301317594788293}
   _targetLockedVolume: {fileID: 0}
   _slowMoMultiplier: 0.85
@@ -511,16 +540,17 @@ MonoBehaviour:
   _middle: {fileID: 0}
   _bottom: {fileID: 0}
   _canvas: {fileID: 0}
+  _healthBar: {fileID: 0}
+  _energyBar: {fileID: 0}
+  MaxHealth: 1500
+  CurrentHealth: 0
   _currentTarget: {fileID: 0}
   _detectionRadius: 20
   _targetMask:
     serializedVersion: 2
     m_Bits: 256
-  _detectionColor: {r: 0, g: 1, b: 0.3253188, a: 1}
   _cinemachineImpulseSource: {fileID: 0}
-  _targetsInRange: []
-  _targetsInRangeDot: []
-  _targetsInRangeCross: []
+  _weaponCollider: {fileID: 2084201372750986043}
   _nameText: {fileID: 0}
 --- !u!1 &769491302211615126
 GameObject:
@@ -585,6 +615,35 @@ Transform:
   m_Father: {fileID: 236755399180957448}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &504317627
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071223078936158090}
+  serializedVersion: 2
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 126
+  m_CollisionDetection: 0
+--- !u!114 &504317628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071223078936158090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60a1ae1c047fdda4cbc7be8e5a8ab923, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _owner: {fileID: 236755399180957448}
 --- !u!1 &1259540410137295960
 GameObject:
   m_ObjectHideFlags: 0
@@ -2833,10 +2892,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 2.442
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4855970839375907574, guid: a8c197d5c47f78d4c825245f75dfd468, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: a8c197d5c47f78d4c825245f75dfd468, type: 3}
+--- !u!1 &1071223078936158090 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 729047729422910394, guid: a8c197d5c47f78d4c825245f75dfd468, type: 3}
+  m_PrefabInstance: {fileID: 343301318426647600}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1071223078936158091 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 729047729422910395, guid: a8c197d5c47f78d4c825245f75dfd468, type: 3}
+  m_PrefabInstance: {fileID: 343301318426647600}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &2084201372750986043 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 1742669450945652491, guid: a8c197d5c47f78d4c825245f75dfd468, type: 3}
   m_PrefabInstance: {fileID: 343301318426647600}
   m_PrefabAsset: {fileID: 0}

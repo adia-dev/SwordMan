@@ -1,7 +1,5 @@
 using SwordMan.Behaviors;
 using SwordMan.Controllers;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -34,14 +32,17 @@ namespace SwordMan.Managers
         public bool DesireJump { get; set; }
         public bool Attack1 { get; set; }
         public bool Attack2 { get; set; }
+        public bool Special1 { get; set; }
+        public bool Special2 { get; set; }
         public bool DesireDodge { get; set; }
-        public bool TargetLocked { get; set; }
+        public bool LockTarget { get; set; }
         public bool IsMovingLeft { get; set; }
         public bool IsRunning { get; set; }
         public bool ShowDebug { get; set; }
         public bool HideCursor => _hideCursor;
 
         #region InputAction Events
+
 
         public void OnMove(InputAction.CallbackContext ctx)
         {
@@ -71,25 +72,30 @@ namespace SwordMan.Managers
         public void OnLockTarget(InputAction.CallbackContext ctx)
         {
             if (ctx.started)
-                TargetLocked = !TargetLocked;
+                LockTarget = true;
+
+            Debug.Log("Lock Target");
+
+            if (ctx.canceled)
+                LockTarget = false;
         }
 
         public void OnSwitchTarget(InputAction.CallbackContext ctx)
         {
-            if (TargetLocked && ctx.started)
+            if (ctx.started)
                 _fightingBehavior.SwitchTarget();
 
         }
 
         public void OnSwitchTargetLeft(InputAction.CallbackContext ctx)
         {
-            if (TargetLocked && ctx.started)
+            if (ctx.started)
                 _fightingBehavior.SwitchTargetLeft();
         }
 
         public void OnSwitchTargetRight(InputAction.CallbackContext ctx)
         {
-            if (TargetLocked && ctx.started)
+            if (ctx.started)
                 _fightingBehavior.SwitchTargetRight();
         }
 
@@ -113,6 +119,22 @@ namespace SwordMan.Managers
                 Attack2 = true;
             if (ctx.canceled)
                 Attack2 = false;
+        }
+
+        public void OnSpecial1(InputAction.CallbackContext ctx)
+        {
+            if (ctx.started)
+                Special1 = true;
+            if (ctx.canceled)
+                Special1 = false;
+        }
+
+        public void OnSpecial2(InputAction.CallbackContext ctx)
+        {
+            if (ctx.started)
+                Special2 = true;
+            if (ctx.canceled)
+                Special2 = false;
         }
 
         #endregion

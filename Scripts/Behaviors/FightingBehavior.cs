@@ -14,24 +14,29 @@ namespace SwordMan.Behaviors
         [SerializeField] Target _currentTarget = null;
         [SerializeField] float _detectionRadius = 5f;
         [SerializeField] LayerMask _targetMask = -1;
-        [SerializeField] Color _detectionColor = Color.white;
         [SerializeField] Cinemachine.CinemachineImpulseSource _cinemachineImpulseSource;
+        [SerializeField] BoxCollider _weaponCollider = null;
 
         int _currentTargetIndex = 0;
+        bool _timeAltered = false;
 
-        public List<Target> _targetsInRange = new List<Target>();
-        public List<float> _targetsInRangeDot = new List<float>();
-        public List<float> _targetsInRangeCross = new List<float>();
+        List<Target> _targetsInRange = new List<Target>();
+        List<float> _targetsInRangeDot = new List<float>();
+        List<float> _targetsInRangeCross = new List<float>();
+
         public Target CurrentTarget => _currentTarget;
+        public bool TargetLocked { get; private set; }
 
         PlayerController _playerController;
         AnimatorController _animatorController;
+        Animator _animator;
         [SerializeField] TMP_Text _nameText = null;
 
         void Awake()
         {
             _playerController = GetComponent<PlayerController>();
             _animatorController = GetComponent<AnimatorController>();
+            _animator = GetComponent<Animator>();
 
             if (_targetsInRange.Count > 0)
                 _currentTarget = _targetsInRange[0];
@@ -43,30 +48,79 @@ namespace SwordMan.Behaviors
         // Update is called once per frame
         void Update()
         {
-            if (_playerController == null)
+            if (_playerController == null || IsDead)
             {
                 return;
             }
 
             HandleTargets();
 
-            if (_currentTarget == null) return;
+            if (_currentTarget == null)
+            {
+                TargetLocked = false;
+                return;
+            }
+            else if (InputManager.Instance.LockTarget)
+            {
+                TargetLocked = !TargetLocked;
+                InputManager.Instance.LockTarget = false;
+            }
 
             if (InputManager.Instance.Attack1)
             {
-                Debug.Log("Attack 1");
-                _animatorController.TriggerAttack2();
+                _animatorController.TriggerAttack1();
             }
 
             if (InputManager.Instance.Attack2)
             {
-                _animatorController.TriggerAttack1();
-                Debug.Log("Attack 2");
+                _animatorController.TriggerAttack2();
+            }
+
+            if (InputManager.Instance.Special1)
+            {
+                _animatorController.TriggerSpecial1();
+            }
+
+            if (InputManager.Instance.Special2)
+            {
+                _animatorController.TriggerSpecial2();
             }
 
             InputManager.Instance.Attack1 = false;
             InputManager.Instance.Attack2 = false;
+            InputManager.Instance.Special1 = false;
+            InputManager.Instance.Special2 = false;
 
+        }
+
+        public override void TakeDamage(int amount)
+        {
+            if (IsDead) return;
+
+            CurrentHealth = Mathf.Max(CurrentHealth - amount, 0);
+            if (_healthBar != null)
+                _healthBar.rectTransform.sizeDelta = new Vector2(Mathf.Clamp((float)CurrentHealth / MaxHealth, 0f, 0.95f), 0.03f);
+
+            _cinemachineImpulseSource.GenerateImpulse();
+            StartCoroutine(HitStop(0.1f));
+
+            if (IsDead)
+            {
+                _animator.SetTrigger("die");
+                _currentTarget = null;
+            }
+            else
+            {
+                _animator.SetTrigger("hit");
+            }
+        }
+
+        public override void Heal(int amount)
+        {
+
+            CurrentHealth = Mathf.Min(CurrentHealth + amount, MaxHealth);
+            if (_healthBar != null)
+                _healthBar.rectTransform.sizeDelta = new Vector2(Mathf.Clamp((float)CurrentHealth / MaxHealth, 0f, 0.95f), 0.03f);
         }
 
         void HandleTargets()
@@ -80,7 +134,7 @@ namespace SwordMan.Behaviors
             foreach (var col in cols)
             {
                 Target target = col.GetComponent<Target>();
-                if (target != null && target != GetComponent<Target>())
+                if (target != null && target != GetComponent<Target>() && !target.IsDead)
                 {
                     if (!_targetsInRange.Contains(target))
                     {
@@ -94,10 +148,11 @@ namespace SwordMan.Behaviors
                 }
             }
 
-            if (_targetsInRange.Count > 0 && !InputManager.Instance.TargetLocked)
+            if (_targetsInRange.Count > 0 && !TargetLocked)
             {
                 int targetIndex = _targetsInRangeDot.IndexOf(_targetsInRangeDot.Max());
                 _currentTarget = _targetsInRange[targetIndex];
+                _cinemachineImpulseSource.GenerateImpulse();
             }
             else if (_targetsInRange.Count == 0)
             {
@@ -105,8 +160,31 @@ namespace SwordMan.Behaviors
             }
         }
 
+
+        IEnumerator HitStop(float hitStopTime)
+        {
+            if (!_timeAltered)
+            {
+                _timeAltered = true;
+
+                float timer = 0f;
+                Time.timeScale = 0f;
+                while (timer <= hitStopTime)
+                {
+                    timer += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+                Time.timeScale = 1f;
+                _timeAltered = false;
+                yield return null;
+            }
+
+        }
+
+        //Events
         public bool SwitchTarget()
         {
+            if (_currentTarget == null || !TargetLocked) return false;
 
             if (_targetsInRange.Count == 0)
             {
@@ -121,9 +199,11 @@ namespace SwordMan.Behaviors
             return true;
         }
 
-
         public bool SwitchTargetRight()
         {
+
+            if (_currentTarget == null || !TargetLocked) return false;
+
             float minCrossY = 1f;
             int targetIndex = -1;
 
@@ -152,6 +232,8 @@ namespace SwordMan.Behaviors
 
         public bool SwitchTargetLeft()
         {
+            if (_currentTarget == null || !TargetLocked) return false;
+
             float maxCrossY = -1f;
             int targetIndex = -1;
 
@@ -178,7 +260,17 @@ namespace SwordMan.Behaviors
             return false;
         }
 
+        public void EnableWeaponCollider()
+        {
+            if (_weaponCollider != null)
+                _weaponCollider.enabled = true;
+        }
 
+        public void DisableWeaponCollider()
+        {
+            if (_weaponCollider != null)
+                _weaponCollider.enabled = false;
+        }
 
         private void OnDrawGizmosSelected()
         {

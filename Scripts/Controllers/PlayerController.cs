@@ -14,8 +14,6 @@ namespace SwordMan.Controllers
         [SerializeField] Transform _inputSpace = null;
         [SerializeField] Cinemachine.CinemachineInputProvider _inputProvider = null;
         [SerializeField] Cinemachine.CinemachineFreeLook _thirdPersonCamera = null;
-        [SerializeField] Cinemachine.CinemachineImpulseSource _cinemachineImpulseSource = null;
-        [SerializeField] Transform _leftFoot = null, _rightFoot = null;
         [SerializeField] Transform _cameraAimPoint = null;
         [SerializeField] GameObject _targetLockedVolume = null;
 
@@ -58,7 +56,17 @@ namespace SwordMan.Controllers
 
         void Update()
         {
-            if (InputManager.Instance.MovementLocked) return;
+
+            if (InputManager.Instance.MovementInput.magnitude == 0f)
+                InputManager.Instance.IsMovingLeft = _lastLookDirection < 0f;
+            else
+                _lastLookDirection = InputManager.Instance.MovementInput.x;
+
+            if (InputManager.Instance.MovementLocked)
+            {
+                _animatorController.Animator.SetFloat(_animatorController.InputMagAnimParam, 0f);
+                return;
+            }
 
             Time.timeScale = 1f;
 
@@ -68,7 +76,7 @@ namespace SwordMan.Controllers
                 InputManager.Instance.MovementInput = Vector2.ClampMagnitude(InputManager.Instance.MovementInput, 1f);
 
 
-            if (InputManager.Instance.TargetLocked)
+            if (_fightingBehavior.CurrentTarget != null && _fightingBehavior.TargetLocked)
             {
                 UpdateLockState();
             }
@@ -96,39 +104,27 @@ namespace SwordMan.Controllers
 
         void UpdateLockState()
         {
-            if (_fightingBehavior.CurrentTarget != null)
-            {
 
 
+            Time.timeScale = _slowMoMultiplier;
 
-                if (InputManager.Instance.MovementInput.magnitude == 0f)
-                    InputManager.Instance.IsMovingLeft = _lastLookDirection < 0f;
-                else
-                    _lastLookDirection = InputManager.Instance.MovementInput.x;
+            _targetLockedVolume.SetActive(true);
 
-                Time.timeScale = _slowMoMultiplier;
+            if (_inputProvider != null)
+                _inputProvider.enabled = false;
 
-                _targetLockedVolume.SetActive(true);
-
-                if (_inputProvider != null)
-                    _inputProvider.enabled = false;
-
-                _thirdPersonCamera.gameObject.SetActive(false);
-                _thirdPersonCamera.m_BindingMode = Cinemachine.CinemachineTransposer.BindingMode.LockToTarget;
+            _thirdPersonCamera.gameObject.SetActive(false);
+            _thirdPersonCamera.m_BindingMode = Cinemachine.CinemachineTransposer.BindingMode.LockToTarget;
 
 
-                if (_targetGroup.FindMember(_fightingBehavior.CurrentTarget.transform) < 0)
-                    _targetGroup.AddMember(_fightingBehavior.CurrentTarget.transform, 1f, 0f);
+            if (_targetGroup.FindMember(_fightingBehavior.CurrentTarget.transform) < 0)
+                _targetGroup.AddMember(_fightingBehavior.CurrentTarget.transform, 1f, 0f);
 
-                if (_targetGroup.FindMember(_cameraAimPoint) < 0)
-                    _targetGroup.AddMember(_cameraAimPoint, 1f, 1f);
+            if (_targetGroup.FindMember(_cameraAimPoint) < 0)
+                _targetGroup.AddMember(_cameraAimPoint, 1f, 1f);
 
-                _movementBehavior.MoveAround(_fightingBehavior.CurrentTarget.transform);
-            }
-            else
-            {
-                InputManager.Instance.TargetLocked = false;
-            }
+            _movementBehavior.MoveAround(_fightingBehavior.CurrentTarget.transform);
+
         }
 
         void UpdateAnimator()
@@ -140,7 +136,7 @@ namespace SwordMan.Controllers
             _animatorController.Animator.SetFloat(_animatorController.HorizontalAnimParam, InputManager.Instance.MovementInput.x * (InputManager.Instance.IsRunning ? 2f : 1f));
             _animatorController.Animator.SetFloat(_animatorController.VerticalAnimParam, InputManager.Instance.MovementInput.y * (InputManager.Instance.IsRunning ? 2f : 1f));
 
-            _animatorController.Animator.SetBool(_animatorController.TargetLockedAnimParam, InputManager.Instance.TargetLocked);
+            _animatorController.Animator.SetBool(_animatorController.TargetLockedAnimParam, _fightingBehavior.TargetLocked);
             _animatorController.Animator.SetBool(_animatorController.IsMovingLeftAnimParam, InputManager.Instance.IsMovingLeft);
         }
 
@@ -167,14 +163,27 @@ namespace SwordMan.Controllers
             InputManager.Instance.MovementLocked = true;
             InputManager.Instance.MovementInput = Vector3.zero;
             //Erase velocity in the future
-        }
+            _animatorController.Animator.SetFloat(_animatorController.InputMagAnimParam, 0f);
 
+        }
 
         public void UnlockMovement()
         {
             InputManager.Instance.MovementLocked = false;
-            Debug.Log("Unlock");
         }
+
+        public void EnableRootMotionAndLockMovement()
+        {
+            EnableRootMotion();
+            LockMovement();
+        }
+
+        public void DisableRootMotionAndUnlockMovement()
+        {
+            DisableRootMotion();
+            UnlockMovement();
+        }
+
     }
 
     #endregion

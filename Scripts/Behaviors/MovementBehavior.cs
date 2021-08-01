@@ -41,7 +41,7 @@ namespace SwordMan.Behaviors
                 _velocityY = 0f;
             }
 
-            _animatorController.Animator.SetFloat(_animatorController.VelocityAnimParam, _currentSpeed, _animatorController.AnimSpeedSmooth, Time.deltaTime);
+            _animatorController.Animator.SetFloat(_animatorController.VelocityAnimParam, _currentSpeed);
 
         }
 
